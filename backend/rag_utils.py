@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Optional
 import os
 import json
 import requests
@@ -271,17 +271,46 @@ def _retrieve_from_kb(
         return []
 
 
-def retrieve_documents(query: str, top_k: int = 5) -> Dict[str, Any]:
+def retrieve_documents(
+    query: str,
+    top_k: int = 5,
+    kb_types: Optional[List[str]] = None,
+) -> Dict[str, Any]:
     """默认同时检索两个知识库（medical_record + medication），合并后排序。
-    后续可通过 kb_type 参数限定单库检索（意图识别路由预留）。
+    kb_types 为 None 时与原先一致；传入时只检索列出的有效 kb_type。
     """
+    if kb_types is not None:
+        kb_iter = [k for k in kb_types if k in VALID_KB_TYPES]
+        if not kb_iter:
+            return {
+                "docs": [],
+                "meta": {
+                    "rerank_enabled": bool(RERANK_MODEL and RERANK_API_KEY and RERANK_BINDING_HOST),
+                    "rerank_applied": False,
+                    "rerank_model": RERANK_MODEL,
+                    "rerank_endpoint": _get_rerank_endpoint(),
+                    "rerank_error": None,
+                    "retrieval_mode": "no_kb",
+                    "candidate_k": 0,
+                    "leaf_retrieve_level": LEAF_RETRIEVE_LEVEL,
+                    "auto_merge_enabled": AUTO_MERGE_ENABLED,
+                    "auto_merge_applied": False,
+                    "auto_merge_threshold": AUTO_MERGE_THRESHOLD,
+                    "auto_merge_replaced_chunks": 0,
+                    "auto_merge_steps": 0,
+                    "candidate_count": 0,
+                },
+            }
+    else:
+        kb_iter = list(VALID_KB_TYPES)
+
     candidate_k = max(top_k * 3, top_k)
     filter_expr = f"chunk_level == {LEAF_RETRIEVE_LEVEL}"
 
     all_retrieved: List[dict] = []
     retrieval_mode = "hybrid"
     try:
-        for kb_type in VALID_KB_TYPES:
+        for kb_type in kb_iter:
             docs = _retrieve_from_kb(query, kb_type, candidate_k, filter_expr)
             all_retrieved.extend(docs)
 

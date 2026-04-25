@@ -154,6 +154,43 @@ def search_knowledge_base(query: str) -> str:
     if rag_trace:
         _set_last_rag_context({"rag_trace": rag_trace})
 
+    def _format_doc_block(doc_list) -> str:
+        lines = []
+        for i, result in enumerate(doc_list, 1):
+            source = result.get("filename", "Unknown")
+            page = result.get("page_number", "N/A")
+            text = result.get("text", "")
+            lines.append(f"[{i}] {source} (Page {page}):\n{text}")
+        return "\n\n---\n\n".join(lines)
+
+    # 扩展阶段仍用全库 merged docs；与原先「最终上下文来自 docs」行为一致
+    if (rag_trace or {}).get("retrieval_stage") == "expanded" and docs:
+        formatted = []
+        for i, result in enumerate(docs, 1):
+            source = result.get("filename", "Unknown")
+            page = result.get("page_number", "N/A")
+            text = result.get("text", "")
+            formatted.append(f"[{i}] {source} (Page {page}):\n{text}")
+        return "Retrieved Chunks:\n" + "\n\n---\n\n".join(formatted)
+
+    if isinstance(rag_result, dict) and "episodic_docs" in rag_result and "semantic_docs" in rag_result:
+        episodic_docs = rag_result.get("episodic_docs") or []
+        semantic_docs = rag_result.get("semantic_docs") or []
+        epi_block = (
+            _format_doc_block(episodic_docs) if episodic_docs else "无命中结果"
+        )
+        sem_block = (
+            _format_doc_block(semantic_docs) if semantic_docs else "无命中结果"
+        )
+        if not docs and not episodic_docs and not semantic_docs:
+            return "No relevant documents found in the knowledge base."
+        return (
+            "## 情景记忆检索结果\n"
+            f"{epi_block}\n\n"
+            "## 语义记忆检索结果\n"
+            f"{sem_block}"
+        )
+
     if not docs:
         return "No relevant documents found in the knowledge base."
 
