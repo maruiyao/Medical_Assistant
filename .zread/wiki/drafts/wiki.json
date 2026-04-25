@@ -1,0 +1,205 @@
+{
+  "id": "2026-04-25-211335",
+  "generated_at": "2026-04-25T13:13:35.503985Z",
+  "language": "zh",
+  "pages": [
+    {
+      "slug": "1-xiang-mu-gai-lan",
+      "title": "项目概览",
+      "file": "1-xiang-mu-gai-lan.md",
+      "section": "入门指南",
+      "level": "Beginner"
+    },
+    {
+      "slug": "2-kuai-su-kai-shi",
+      "title": "快速开始",
+      "file": "2-kuai-su-kai-shi.md",
+      "section": "入门指南",
+      "level": "Beginner"
+    },
+    {
+      "slug": "3-huan-jing-zhun-bei-yu-yi-lai-an-zhuang",
+      "title": "环境准备与依赖安装",
+      "file": "3-huan-jing-zhun-bei-yu-yi-lai-an-zhuang.md",
+      "section": "入门指南",
+      "group": "环境与依赖",
+      "level": "Beginner"
+    },
+    {
+      "slug": "4-docker-compose-fu-wu-bu-shu",
+      "title": "Docker Compose 服务部署",
+      "file": "4-docker-compose-fu-wu-bu-shu.md",
+      "section": "入门指南",
+      "group": "环境与依赖",
+      "level": "Beginner"
+    },
+    {
+      "slug": "5-pei-zhi-wen-jian-env-xiang-jie",
+      "title": "配置文件 (.env) 详解",
+      "file": "5-pei-zhi-wen-jian-env-xiang-jie.md",
+      "section": "入门指南",
+      "group": "环境与依赖",
+      "level": "Beginner"
+    },
+    {
+      "slug": "6-yong-hu-zhu-ce-deng-lu-yu-quan-xian-guan-li",
+      "title": "用户注册、登录与权限管理",
+      "file": "6-yong-hu-zhu-ce-deng-lu-yu-quan-xian-guan-li.md",
+      "section": "入门指南",
+      "group": "核心功能体验",
+      "level": "Beginner"
+    },
+    {
+      "slug": "7-wen-dang-shang-chuan-yu-zhi-shi-ku-guan-li",
+      "title": "文档上传与知识库管理",
+      "file": "7-wen-dang-shang-chuan-yu-zhi-shi-ku-guan-li.md",
+      "section": "入门指南",
+      "group": "核心功能体验",
+      "level": "Beginner"
+    },
+    {
+      "slug": "8-liu-shi-dui-hua-yu-shi-shi-rag-ke-shi-hua",
+      "title": "流式对话与实时 RAG 可视化",
+      "file": "8-liu-shi-dui-hua-yu-shi-shi-rag-ke-shi-hua.md",
+      "section": "入门指南",
+      "group": "核心功能体验",
+      "level": "Beginner"
+    },
+    {
+      "slug": "9-hou-duan-zheng-ti-jia-gou-fastapi-langgraph",
+      "title": "后端整体架构 (FastAPI + LangGraph)",
+      "file": "9-hou-duan-zheng-ti-jia-gou-fastapi-langgraph.md",
+      "section": "深度解析",
+      "group": "架构与核心模块",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "10-qian-duan-jia-gou-yu-jiao-hu-luo-ji",
+      "title": "前端架构与交互逻辑",
+      "file": "10-qian-duan-jia-gou-yu-jiao-hu-luo-ji.md",
+      "section": "深度解析",
+      "group": "架构与核心模块",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "11-shu-ju-ku-yu-huan-cun-she-ji-postgresql-redis",
+      "title": "数据库与缓存设计 (PostgreSQL + Redis)",
+      "file": "11-shu-ju-ku-yu-huan-cun-she-ji-postgresql-redis.md",
+      "section": "深度解析",
+      "group": "架构与核心模块",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "12-hun-he-jian-suo-chou-mi-xiang-liang-yu-bm25-xi-shu-xiang-liang",
+      "title": "混合检索：稠密向量与 BM25 稀疏向量",
+      "file": "12-hun-he-jian-suo-chou-mi-xiang-liang-yu-bm25-xi-shu-xiang-liang.md",
+      "section": "深度解析",
+      "group": "RAG 检索增强生成",
+      "level": "Advanced"
+    },
+    {
+      "slug": "13-san-ji-fen-kuai-yu-auto-merging-ce-lue",
+      "title": "三级分块与 Auto-merging 策略",
+      "file": "13-san-ji-fen-kuai-yu-auto-merging-ce-lue.md",
+      "section": "深度解析",
+      "group": "RAG 检索增强生成",
+      "level": "Advanced"
+    },
+    {
+      "slug": "14-jina-rerank-jing-pai-yu-jiang-ji-ji-zhi",
+      "title": "Jina Rerank 精排与降级机制",
+      "file": "14-jina-rerank-jing-pai-yu-jiang-ji-ji-zhi.md",
+      "section": "深度解析",
+      "group": "RAG 检索增强生成",
+      "level": "Advanced"
+    },
+    {
+      "slug": "15-cha-xun-zhong-xie-step-back-yu-hyde",
+      "title": "查询重写：Step-Back 与 HyDE",
+      "file": "15-cha-xun-zhong-xie-step-back-yu-hyde.md",
+      "section": "深度解析",
+      "group": "RAG 检索增强生成",
+      "level": "Advanced"
+    },
+    {
+      "slug": "16-yi-liao-ling-yu-jian-suo-lu-you-episodic-semantic",
+      "title": "医疗领域检索路由 (Episodic/Semantic)",
+      "file": "16-yi-liao-ling-yu-jian-suo-lu-you-episodic-semantic.md",
+      "section": "深度解析",
+      "group": "RAG 检索增强生成",
+      "level": "Advanced"
+    },
+    {
+      "slug": "17-langgraph-agent-gong-zuo-liu",
+      "title": "LangGraph Agent 工作流",
+      "file": "17-langgraph-agent-gong-zuo-liu.md",
+      "section": "深度解析",
+      "group": "智能体 (Agent) 与工具",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "18-zi-ding-yi-gong-ju-ji-cheng-tian-qi-zhi-shi-ku-deng",
+      "title": "自定义工具集成 (天气、知识库等)",
+      "file": "18-zi-ding-yi-gong-ju-ji-cheng-tian-qi-zhi-shi-ku-deng.md",
+      "section": "深度解析",
+      "group": "智能体 (Agent) 与工具",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "19-shi-shi-si-kao-lian-lu-zhan-shi-yu-zhong-duan-ji-zhi",
+      "title": "实时思考链路展示与中断机制",
+      "file": "19-shi-shi-si-kao-lian-lu-zhan-shi-yu-zhong-duan-ji-zhi.md",
+      "section": "深度解析",
+      "group": "智能体 (Agent) 与工具",
+      "level": "Advanced"
+    },
+    {
+      "slug": "20-wen-dang-jia-zai-yu-fen-kuai-chu-li-liu-cheng",
+      "title": "文档加载与分块处理流程",
+      "file": "20-wen-dang-jia-zai-yu-fen-kuai-chu-li-liu-cheng.md",
+      "section": "深度解析",
+      "group": "数据处理与存储",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "21-milvus-xiang-liang-ku-cun-chu-ce-lue",
+      "title": "Milvus 向量库存储策略",
+      "file": "21-milvus-xiang-liang-ku-cun-chu-ce-lue.md",
+      "section": "深度解析",
+      "group": "数据处理与存储",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "22-fu-ji-fen-kuai-zai-postgresql-zhong-de-cun-chu",
+      "title": "父级分块在 PostgreSQL 中的存储",
+      "file": "22-fu-ji-fen-kuai-zai-postgresql-zhong-de-cun-chu.md",
+      "section": "深度解析",
+      "group": "数据处理与存储",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "23-bm25-tong-ji-xin-xi-de-chi-jiu-hua-yu-tong-bu",
+      "title": "BM25 统计信息的持久化与同步",
+      "file": "23-bm25-tong-ji-xin-xi-de-chi-jiu-hua-yu-tong-bu.md",
+      "section": "深度解析",
+      "group": "数据处理与存储",
+      "level": "Advanced"
+    },
+    {
+      "slug": "24-hui-hua-li-shi-chi-jiu-hua-yu-huan-cun",
+      "title": "会话历史持久化与缓存",
+      "file": "24-hui-hua-li-shi-chi-jiu-hua-yu-huan-cun.md",
+      "section": "深度解析",
+      "group": "会话与记忆管理",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "25-hui-hua-zhai-yao-yu-shang-xia-wen-zhu-ru",
+      "title": "会话摘要与上下文注入",
+      "file": "25-hui-hua-zhai-yao-yu-shang-xia-wen-zhu-ru.md",
+      "section": "深度解析",
+      "group": "会话与记忆管理",
+      "level": "Advanced"
+    }
+  ]
+}

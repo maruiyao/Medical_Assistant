@@ -5,7 +5,14 @@ import asyncio
 from langchain.chat_models import init_chat_model
 from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage, AIMessage, AIMessageChunk, SystemMessage
-from tools import get_current_weather, search_knowledge_base, get_last_rag_context, reset_tool_call_guards, set_rag_step_queue
+from tools import (
+    get_current_weather,
+    search_knowledge_base,
+    search_knowledge_graph,
+    get_last_rag_context,
+    reset_tool_call_guards,
+    set_rag_step_queue,
+)
 from datetime import datetime
 from cache import cache
 from database import SessionLocal
@@ -219,29 +226,26 @@ def create_agent_instance():
 
     agent = create_agent(
         model=model,
-        tools=[get_current_weather, search_knowledge_base],
+        tools=[get_current_weather, search_knowledge_base, search_knowledge_graph],
         system_prompt=(
     "你是用户的高级私人医疗助理。"
     "你服务于长期健康管理场景，回答应专业、谨慎、简洁，不夸大结论。"
 
-    "你目前可利用四类知识来源："
-    "1) 情景记忆知识库：用户上传的个人病例报告；"
-    "2) 语义记忆知识库：用户上传的药品说明书、医学论文等长文本；"
-    "3) 预设权威医疗知识图谱；"
-    "4) 预设海量医疗问答集。"
-    "以上知识源统一通过工具 search_knowledge_base 访问。"
+    "你目前可利用的知识来源与工具："
+    "1) 情景/语义类文档：通过 search_knowledge_base（混合向量检索用户上传的病例、说明书、论文等）。"
+    "2) 预设医疗知识图谱：通过 search_knowledge_graph 检索疾病、药品、检查、治疗关系等结构化事实（工具返回 <提示> 块，不代替你生成最终句）。"
+    "3) 非医疗问题可使用 get_current_weather 等；无合适工具时直接说明。"
 
     "工具调用规则（必须严格遵守）："
-    "A. 只要用户问题与医疗、用药、检查、诊断、病历、健康管理相关，优先调用 search_knowledge_base；"
-    "B. 每个回合最多调用一次 search_knowledge_base；禁止重复调用；"
-    "C. 一旦收到 search_knowledge_base 返回结果，必须立即基于该结果给出最终回答；"
-    "D. 收到 search_knowledge_base 结果后，不得再调用任何其他工具；"
-    "E. 非医疗问题（如天气）可调用对应工具；若与医疗无关且无合适工具，直接回答。"
+    "A. 与文档/长文本/个人材料相关，优先 search_knowledge_base；与疾病-药品-检查关系、图谱中实体属性相关，用 search_knowledge_graph。"
+    "B. 每个回合内 search_knowledge_base 与 search_knowledge_graph 各最多调用一次；不要重复调用同一工具。"
+    "C. 一旦收到某检索工具结果，须立即据其作答；不得在同回合再调其他工具（天气等非知识检索除外）。"
+    "D. 非医疗问题（如天气）可单独调用天气工具，不受上条知识类限制。"
 
     "回答约束："
     "1) 仅依据检索结果与用户问题作答，不得编造文献、指南、药名或数据；"
     "2) 若证据不足、冲突或缺失，明确说明“不确定/不知道”，并指出缺什么信息；"
-    "3) 若工具结果包含回溯式问答（step-back）信息，可用于归纳结论，但不要暴露推理过程；"
+    "3) 若知识库结果包含多段 <提示>，需整合为连贯回答，不要原样堆叠标签；"
     "4) 涉及风险场景（急性加重、严重不良反应、危急症状）时，明确建议及时线下就医。"
 ),
     )

@@ -14,6 +14,7 @@ AMAP_API_KEY = os.getenv("AMAP_API_KEY")
 
 _LAST_RAG_CONTEXT = None
 _KNOWLEDGE_TOOL_CALLS_THIS_TURN = 0
+_KG_TOOL_CALLS_THIS_TURN = 0
 _RAG_STEP_QUEUE = None  # asyncio.Queue, set by agent before streaming
 _RAG_STEP_LOOP = None   # asyncio loop, captured when setting queue
 
@@ -34,8 +35,9 @@ def get_last_rag_context(clear: bool = True) -> Optional[dict]:
 
 def reset_tool_call_guards():
     """每轮对话开始时重置工具调用计数。"""
-    global _KNOWLEDGE_TOOL_CALLS_THIS_TURN
+    global _KNOWLEDGE_TOOL_CALLS_THIS_TURN, _KG_TOOL_CALLS_THIS_TURN
     _KNOWLEDGE_TOOL_CALLS_THIS_TURN = 0
+    _KG_TOOL_CALLS_THIS_TURN = 0
 
 
 def set_rag_step_queue(queue):
@@ -202,3 +204,20 @@ def search_knowledge_base(query: str) -> str:
         formatted.append(f"[{i}] {source} (Page {page}):\n{text}")
 
     return "Retrieved Chunks:\n" + "\n\n---\n\n".join(formatted)
+
+
+
+
+@tool("search_knowledge_graph")
+def search_knowledge_graph(query: str) -> str:
+    """在预设医疗知识图谱中检索疾病-药品-检查等结构化关系。返回 <提示> 事实块，由主模型整合为回答。"""
+    global _KG_TOOL_CALLS_THIS_TURN
+    if _KG_TOOL_CALLS_THIS_TURN >= 10:
+        return (
+            "TOOL_CALL_LIMIT_REACHED: search_knowledge_graph has already been called once in this turn. "
+            "Use the existing result and provide the final answer."
+        )
+    _KG_TOOL_CALLS_THIS_TURN += 1
+    from graphrag_pipeline import run_knowledge_graph_search
+
+    return run_knowledge_graph_search(query, emit=emit_rag_step)

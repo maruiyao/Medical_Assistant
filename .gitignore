@@ -19,3 +19,9 @@ data/
 
 # test
 tests/
+
+backend/model/
+
+backend/tmp_data/
+
+backend/data/
