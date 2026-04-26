@@ -4,14 +4,14 @@
   "language": "zh",
   "pages": [
     {
-      "slug": "1-xiang-mu-gai-lan",
+      "slug": "1-xiang-mu-gai-lan.md",
       "title": "项目概览",
       "file": "1-xiang-mu-gai-lan.md",
       "section": "入门指南",
       "level": "Beginner"
     },
     {
-      "slug": "2-kuai-su-kai-shi",
+      "slug": "2-kuai-su-kai-shi.md",
       "title": "快速开始",
       "file": "2-kuai-su-kai-shi.md",
       "section": "入门指南",
