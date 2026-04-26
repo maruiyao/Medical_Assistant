@@ -1,0 +1,35 @@
+- [项目概览](1-xiang-mu-gai-lan.md)
+- [快速开始](2-kuai-su-kai-shi.md)
+
+- 入门指南
+  - 环境与依赖
+    - [环境准备与依赖安装](3-huan-jing-zhun-bei-yu-yi-lai-an-zhuang.md)
+    - [Docker Compose 服务部署](4-docker-compose-fu-wu-bu-shu.md)
+    - [配置文件 (.env) 详解](5-pei-zhi-wen-jian-env-xiang-jie.md)
+  - 核心功能体验
+    - [用户注册、登录与权限管理](6-yong-hu-zhu-ce-deng-lu-yu-quan-xian-guan-li.md)
+    - [文档上传与知识库管理](7-wen-dang-shang-chuan-yu-zhi-shi-ku-guan-li.md)
+    - [流式对话与实时 RAG 可视化](8-liu-shi-dui-hua-yu-shi-shi-rag-ke-shi-hua.md)
+
+- 深度解析
+  - 架构与核心模块
+    - [后端整体架构 (FastAPI + LangGraph)](9-hou-duan-zheng-ti-jia-gou-fastapi-langgraph.md)
+    - [前端架构与交互逻辑](10-qian-duan-jia-gou-yu-jiao-hu-luo-ji.md)
+    - [数据库与缓存设计 (PostgreSQL + Redis)](11-shu-ju-ku-yu-huan-cun-she-ji-postgresql-redis.md)
+  - RAG 检索增强生成
+    - [混合检索：稠密向量与 BM25 稀疏向量](12-hun-he-jian-suo-chou-mi-xiang-liang-yu-bm25-xi-shu-xiang-liang.md)
+    - [三级分块与 Auto-merging 策略](13-san-ji-fen-kuai-yu-auto-merging-ce-lue.md)
+    - [Jina Rerank 精排与降级机制](14-jina-rerank-jing-pai-yu-jiang-ji-ji-zhi.md)
+    - [查询重写：Step-Back 与 HyDE](15-cha-xun-zhong-xie-step-back-yu-hyde.md)
+    - [医疗领域检索路由 (Episodic/Semantic)](16-yi-liao-ling-yu-jian-suo-lu-you-episodic-semantic.md)
+  - 智能体 (Agent) 与工具
+    - [LangGraph Agent 工作流](17-langgraph-agent-gong-zuo-liu.md)
+    - [自定义工具集成 (天气、知识库等)](18-zi-ding-yi-gong-ju-ji-cheng-tian-qi-zhi-shi-ku-deng.md)
+    - [实时思考链路展示与中断机制](19-shi-shi-si-kao-lian-lu-zhan-shi-yu-zhong-duan-ji-zhi.md)
+  - 数据处理与存储
+    - [文档加载与分块处理流程](20-wen-dang-jia-zai-yu-fen-kuai-chu-li-liu-cheng.md)
+    - [Milvus 向量库存储策略](21-milvus-xiang-liang-ku-cun-chu-ce-lue.md)
+    - [BM25 统计信息的持久化与同步](23-bm25-tong-ji-xin-xi-de-chi-jiu-hua-yu-tong-bu.md)
+  - 会话与记忆管理
+    - [会话历史持久化与缓存](24-hui-hua-li-shi-chi-jiu-hua-yu-huan-cun.md)
+    - [会话摘要与上下文注入](25-hui-hua-zhai-yao-yu-shang-xia-wen-zhu-ru.md)
