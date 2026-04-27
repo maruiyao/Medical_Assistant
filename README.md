@@ -346,7 +346,7 @@ uv run uvicorn backend.app:app --host 0.0.0.0 --port 8000 --reload
 
 ## 整体架构
 
-![项目架构图](./docs/images/jiagou.png)
+![架构图](./jiagou.png)
 
 ### 后端实现
 
