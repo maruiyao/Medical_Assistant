@@ -21,7 +21,12 @@ def run_knowledge_graph_search(query: str, emit: Emit = None) -> str:
 
     efn = emit or (lambda _i, _l, _d: None)
 
-    if get_neo4j_graph() is None:
+    try:
+        graph = get_neo4j_graph()
+    except Exception as ex:
+        return str(ex)
+
+    if graph is None:
         return (
             "知识图谱不可用：未配置 NEO4J_URI/NEO4J_PASSWORD，或缺少 py2neo。"
             "请检查 .env 与依赖。"
@@ -43,6 +48,5 @@ def run_knowledge_graph_search(query: str, emit: Emit = None) -> str:
         return f"实体识别失败: {ex!s}"
 
     efn("🕸️", "从 Neo4j 拉取子图…", "")
-    g = get_neo4j_graph()
-    text, _yitu, _e = build_kg_tool_context(query, intent_text, entities, g, efn)
+    text, _yitu, _e = build_kg_tool_context(query, intent_text, entities, graph, efn)
     return text

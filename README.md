@@ -73,7 +73,7 @@ REDIS_URL=redis://127.0.0.1:6379/0
 
 # ===== Auth =====
 JWT_SECRET_KEY=replace-with-strong-random-secret
-ADMIN_INVITE_CODE=supermew-admin-2026
+ADMIN_INVITE_CODE=mryisgood
 JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=1440
 PASSWORD_PBKDF2_ROUNDS=310000
@@ -330,43 +330,8 @@ uv run uvicorn backend.app:app --host 0.0.0.0 --port 8000 --reload
   - `POST /documents/upload`：上传并向量化 PDF/Word/Excel。
   - `DELETE /documents/{filename}`：删除指定文档向量数据（会先按文件名分页拉取 chunk 文本并同步扣减 BM25 持久化统计，再删 Milvus）。
 
-## 流式输出与实时检索过程 — 技术细节
 
-#### 1. 跨线程事件调度（Cross-Thread Event Scheduling）
-这是一个解决 **"同步工具阻塞异步事件循环"** 问题的关键架构设计，常用于 Python 异步 Web 服务与 CPU 密集型/IO 密集型任务的混合场景。
-
-**痛点**：
-FastAPI 运行在单线程的 asyncio Event Loop 上。为了不阻塞主线程，LangChain 通常将同步工具（如 `search_knowledge_base`）放到 `ThreadPoolExecutor` 中运行。但在子线程中，无法直接访问主线程的 `asyncio.Queue`，且 `asyncio.get_event_loop()` 通常会失败。
-
-**解决方案**：
-我们采用了 **"Global Loop Capture + Threadsafe Callback"** 模式：
-
-1.  **Loop 捕获 (Main Thread)**:
-    在 Agent 开始生成前，主线程调用 `set_rag_step_queue()`。此时我们捕获当前的运行循环：`_RAG_STEP_LOOP = asyncio.get_running_loop()` 并保存为全局变量。
-2.  **跨线程发射 (Worker Thread)**:
-    当 RAG 工具在子线程运行时，调用 `emit_rag_step()`。
-    函数内部使用 `_RAG_STEP_LOOP.call_soon_threadsafe(queue.put_nowait, step_data)`。
-3.  **原理**:
-    `call_soon_threadsafe` 是 asyncio 唯一允许从其他线程向 Loop 注入回调的方法。它相当于向主 Loop 的"待办事项箱"投递了一个任务（即 `queue.put_nowait`），主 Loop 会在下一次 tick 立即执行它，从而实现数据的平滑流转。
-
-```python
-# 核心代码摘要 (tools.py)
-def set_rag_step_queue(queue):
-    global _RAG_STEP_QUEUE, _RAG_STEP_LOOP
-    _RAG_STEP_QUEUE = queue
-    # 关键：在主线程捕获 Loop
-    _RAG_STEP_LOOP = asyncio.get_running_loop()
-
-def emit_rag_step(icon, label):
-    # 关键：从子线程安全调度回主 Loop
-    if _RAG_STEP_LOOP and not _RAG_STEP_LOOP.is_closed():
-        _RAG_STEP_LOOP.call_soon_threadsafe(
-            _RAG_STEP_QUEUE.put_nowait, 
-            {"icon": icon, "label": label}
-        )
-```
-
-### 2. 混合检索（Hybrid Search）深度实现
+###  混合检索（Hybrid Search）深度实现
 项目并非简单调用 Milvus 接口，而是手动构建了稀疏-稠密双塔检索：
 
 - **Dense Pathway**：使用 `langchain_huggingface.HuggingFaceEmbeddings`（默认 `BAAI/bge-m3`）生成稠密向量，维度由 `DENSE_EMBEDDING_DIM` 与集合 schema 对齐（默认 1024），向量可做 L2 归一化后与 Milvus `IP` 度量配合。
@@ -377,44 +342,11 @@ def emit_rag_step(icon, label):
     - 使用 Milvus 的 `AnnSearchRequest` 同时发起两个请求。
     - **RRFRanker (Reciprocal Rank Fusion)**: 采用 `k=60` 的倒数排名融合算法，将两路召回结果无参数化地合并，避免了加权求和中调节 `alpha` 参数的困难。
 
-### 3. 前端 "Thinking State Machine"
-前端 `script.js` 维护了一个微型状态机来处理通过 SSE 传回的复杂混合流：
 
-1.  **Idle**: 等待用户输入。
-2.  **Thinking (Initial)**: 收到请求，创建消息气泡，`isThinking=true`，显示默认动画。
-3.  **Thinking (Active RAG)**: 收到 `type: rag_step` 事件。
-    - 状态机保持 `isThinking=true`。
-    - 动态更新 Header 文字（如 "正在重写查询..."）。
-    - 向 `ragSteps` 数组追加步骤，触发 Vue 列表渲染。
-4.  **Streaming**: 收到第一个 `type: content` 事件。
-    - **立即切换**: 设置 `isThinking=false`。
-    - 并不销毁气泡，而是隐藏思考 header，开始在同一气泡内追加 Markdown 文本。
-    - 这样实现了从"思考"到"回答"的无缝视觉过渡，没有突兀的 UI 抖动。
 
 ## 整体架构
 
-```
-用户发送消息
-    │
-    ▼
-POST /chat/stream → StreamingResponse(text/event-stream)
-    │
-    ▼
-chat_with_agent_stream()
-    │
-    ├── 创建统一输出队列 (asyncio.Queue)
-    ├── 设置 _RagStepProxy → emit_rag_step() 的输出直接入队
-    ├── 启动 _agent_worker 后台任务 (asyncio.create_task)
-    │     └── agent.astream(stream_mode="messages") 逐 token 产出
-    │           ├── AIMessageChunk (文本) → {"type": "content"} 入队
-    │           └── tool_call_chunks (工具调用) → 跳过
-    │
-    └── 主循环：await output_queue.get() → yield SSE
-          ▲
-          │ (并发) RAG 工具在线程池中执行
-          │ emit_rag_step() → loop.call_soon_threadsafe → 入队
-          │ {"type": "rag_step"} 立即从队列取出并推送到前端
-```
+![项目架构图](./docs/images/jiagou.png)
 
 ### 后端实现
 
@@ -440,42 +372,12 @@ chat_with_agent_stream()
 - `error`：错误信息
 - `[DONE]`：流结束标记
 
-#### 4) StreamingResponse 配置 (`api.py`)
-```python
-StreamingResponse(
-    event_generator(),
-    media_type="text/event-stream",
-    headers={
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        "Connection": "keep-alive",
-        "X-Accel-Buffering": "no",  # 禁用 Nginx 缓冲
-    },
-)
-```
 
-### 前端实现
 
-#### 1) ReadableStream 解析 (`script.js`)
-- 使用 `response.body.getReader()` + `TextDecoder` 逐块读取。
-- 手动按 `\n\n` 分割 SSE 事件，解析 `data: ` 前缀后的 JSON。
-- `content` 事件追加到消息文本；`rag_step` 事件追加到检索步骤数组并同步更新思考状态文字。
-
-#### 2) 思考气泡二合一
-- 发送消息后立即创建带 `isThinking: true` 的气泡，显示跳动圆点 + 动态文字。
-- 收到 `rag_step` 时，`thinkingLabel` 更新为当前步骤（如"正在检索知识库..."）。
-- 收到第一个 `content` token 时，`isThinking = false`，同一气泡无缝切换为正常文本流。
-- **不存在两个分离的气泡**，从思考 → 检索 → 回答全程在同一个气泡内完成。
-
-#### 3) Vue 3 响应式注意事项
-- 通过 `this.messages[botMsgIdx]` 索引访问（而非缓存对象引用），确保拿到 Vue 的 reactive proxy。
-- `ragSteps` 数组通过 `push()` 触发响应式更新。
 
 ### 终止功能
 
-#### 前端
-- 发送按钮在 `isLoading` 期间切换为红色终止按钮（`v-if/v-else`）。
-- 点击调用 `AbortController.abort()`，取消正在进行的 `fetch` 请求。
-- 捕获 `AbortError`，在气泡中显示"(已终止回答)"。
+
 
 #### 后端
 - FastAPI 的 `StreamingResponse` 在客户端断开连接（如浏览器触发 `abort()` 或关闭标签页）时，会检测到 socket 断开。
@@ -486,33 +388,19 @@ StreamingResponse(
 
 ## 更新日志
 
-### 2026-04-08 本地嵌入与 BM25 持久化
+###  本地嵌入与 BM25 持久化
 - **稠密向量**：由兼容 API 改为 `langchain_huggingface` 本地模型（默认 `BAAI/bge-m3`），支持 `EMBEDDING_MODEL` / `EMBEDDING_DEVICE`；Milvus `dense_embedding` 维度与 `DENSE_EMBEDDING_DIM` 对齐（默认 1024）。
 - **BM25 统计**：`词表 vocab + 文档频次 doc_freq + 文档数 N` 持久化至 `data/bm25_state.json`（可选 `BM25_STATE_PATH`）；每个叶子 chunk 视为一篇文档，入库时 **increment_add**，删除文档或覆盖上传前按文件名从 Milvus 拉取 chunk 文本后 **increment_remove**；`embedding_service` 在 `api` 与 `rag_utils` 间单例共享，避免写入与检索状态分裂。
 - **Milvus 查询**：单次 `query` 的 `limit` 受服务端窗口限制（如 16384），新增 **`query_all`** 分页拉取，供删除/覆盖前取回全文以同步 BM25；修复单次 `limit=100000` 导致的 RPC 报错。
 - **说明**：README「环境变量」「文档入库」「混合检索」「数据目录」等已同步为上述行为；`data/` 下 `bm25_state.json` 通常被 git 忽略，空库仅有 Milvus 无状态文件时需自行重建或重导。
 
-### 2026-03-21 后端服务建设升级（认证 + 数据库 + 缓存）
-- 新增认证与权限模块：注册、登录、JWT、管理员权限控制。
-- 聊天历史从本地 JSON 迁移到 PostgreSQL，按用户隔离会话数据。
-- 父级分块存储从本地 JSON 迁移到 PostgreSQL。
-- 引入 Redis 缓存会话与父文档，提高读取性能并降低数据库压力。
-- API 升级为 Token 驱动，移除前端直接传 `user_id` 的历史模式。
-- 文档管理接口收敛到管理员角色，避免普通用户误操作知识库。
-- 密码哈希方案升级为 PBKDF2-SHA256，兼容历史 bcrypt 校验。
 
-### 2026-03-13 三级分块与 Auto-merging 升级
+
+###  三级分块与 Auto-merging 升级
 - 新增三级滑动窗口分块（L1/L2/L3），并为分块写入层级元数据。
 - 存储策略调整为 Leaf-only：仅 L3 叶子块写入 Milvus，L1/L2 写入本地 DocStore。
 - Auto-merging 改为从 DocStore 拉取父块，减少向量冗余存储。
 - 思考链路新增三级检索与自动合并步骤事件。
 - `rag_trace` 新增 `leaf_retrieve_level` 与 `auto_merge_*` 字段，且历史会话读取同样保留这些字段。
 
-### 2026-02-19 RAG 实时思考链路修复
-- **问题**：Agent 在执行同步工具（如 `search_knowledge_base`）时，由于运行在线程池中，无法正确获取主线程的 asyncio 事件循环，导致 `emit_rag_step` 事件丢失，前端"思考中"气泡一直静止。
-- **修复**：
-  1. **Backend (`tools.py`)**：在 `set_rag_step_queue` 中显式捕获主线程的 `loop`。
-  2. **Backend (`tools.py`)**：更新 `emit_rag_step` 使用捕获的 `_RAG_STEP_LOOP.call_soon_threadsafe` 跨线程调度事件。
-  3. **Frontend (`script.js`)**：在发送消息时初始化空的 `ragSteps: []` 数组，确保 Vue 响应式系统能立即追踪后续的 push 操作。
-- **效果**：用户提问后，思考气泡内实时跳动显示检索步骤（如"🔍 正在检索知识库..." -> "📊 正在评估文档相关性..."），不再只有静态的"正在思考中..."。
 

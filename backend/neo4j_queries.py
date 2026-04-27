@@ -26,7 +26,27 @@ def _neo4j_err_hint(ex: BaseException) -> str:
             " Neo4j 数据库名配置不匹配。请检查 .env 里的 `NEO4J_DB` 是否与实例实际库名一致；"
             "有些 Aura 实例默认库名是 `neo4j`，也有些会使用实例 ID。删掉该变量时，代码会尝试回退到服务默认库。"
         )
+    if "Security.Unauthorized" in s or "authentication failure" in s.lower():
+        return (
+            " Neo4j 账号或密码认证失败。请检查 `.env` 里的 `NEO4J_USER` / `NEO4J_USERNAME`"
+            " 与 `NEO4J_PASSWORD` 是否仍然有效。"
+        )
+    if (
+        "Cannot open connection" in s
+        or "Cannot connect to" in s
+        or "nodename nor servname provided" in s
+    ):
+        return (
+            " Neo4j 主机当前不可达。请检查 `NEO4J_URI` 是否填写正确，"
+            "并确认本机网络/DNS 能访问 Aura 域名。"
+        )
+    if "Connection has been closed" in s:
+        return " 底层连接已被服务端关闭，通常是因为前面的认证失败或 TLS/URI 配置不匹配。"
     return ""
+
+
+def _format_neo4j_connect_error(ex: BaseException) -> str:
+    return f"知识图谱连接失败: {type(ex).__name__}: {ex!s}.{_neo4j_err_hint(ex)}"
 
 # 与 add_shuxing_prompt 中使用的属性列一致
 _SHUXING_WHITELIST = {
@@ -84,9 +104,13 @@ _sync_neo4j_uri_in_os_env_before_py2neo()
 @lru_cache(maxsize=1)
 def get_neo4j_graph():
     raw_uri = _env_clean(os.getenv("NEO4J_URI"))
-    user = _env_clean(os.getenv("NEO4J_USER")) or "neo4j"
+    user = (
+        _env_clean(os.getenv("NEO4J_USER"))
+        or _env_clean(os.getenv("NEO4J_USERNAME"))
+        or "neo4j"
+    )
     password = _env_clean(os.getenv("NEO4J_PASSWORD"))
-    db = _env_clean(os.getenv("NEO4J_DB"))
+    db = _env_clean(os.getenv("NEO4J_DB")) or _env_clean(os.getenv("NEO4J_DATABASE"))
     if not raw_uri or not password:
         return None
     uri = _normalize_neo4j_uri_for_py2neo(raw_uri)
@@ -101,13 +125,18 @@ def get_neo4j_graph():
     # 若其它模块已提前 import 过 py2neo，覆盖其模块级缓存
     py2neo.NEO4J_URI = os.environ.get("NEO4J_URI")
     try:
-        gs = py2neo.GraphService(uri, user=user, password=password)
-        graph_name = db or gs.connector.default_graph_name()
-        return gs[graph_name]
-    except Exception:
         if db:
-            raise
+            return py2neo.Graph(uri, name=db, auth=(user, password))
         return py2neo.Graph(uri, auth=(user, password))
+    except Exception as ex:
+        logger.warning("get_neo4j_graph direct Graph failed: %s", ex)
+        try:
+            gs = py2neo.GraphService(uri, user=user, password=password)
+            graph_name = db or gs.connector.default_graph_name()
+            return gs[graph_name]
+        except Exception as ex2:
+            logger.warning("get_neo4j_graph GraphService fallback failed: %s", ex2)
+            raise RuntimeError(_format_neo4j_connect_error(ex2)) from ex2
 
 
 def add_shuxing_prompt(

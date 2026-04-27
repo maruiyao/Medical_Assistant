@@ -79,10 +79,10 @@ class RouteDecision(BaseModel):
     """医疗检索：是否需要查询情景记忆 / 语义记忆。"""
 
     need_episodic: bool = Field(
-        description="若问题与用户个人病历、就诊或检查报告相关则为 true"
+        description="若问题与用户个人病历、就诊或检查报告相关则为 True"
     )
     need_semantic: bool = Field(
-        description="若与药品说明、医学论文、通用医学知识相关则为 true"
+        description="若与药品说明、医学论文、通用医学知识相关则为 True"
     )
 
 
@@ -120,9 +120,10 @@ def _format_docs(docs: List[dict]) -> str:
 
 ROUTE_PROMPT = (
     "你是医疗检索路由器。请判断以下用户问题需要查询哪些知识源：\n"
-    "- need_episodic：与用户个人病历、就诊记录、检查报告相关\n"
-    "- need_semantic：与药品说明书、医学论文、通用医学知识相关\n"
+    "- need_episodic：与用户个人病历、就诊记录、检查报告相关，也被称为情景记忆\n"
+    "- need_semantic：与药品说明书、医学论文、通用医学知识相关，也被称为语义记忆\n"
     "若无法判断，默认 need_semantic=true。\n"
+    "一定要认真的判断"
     "用户问题：{question}"
 )
 
